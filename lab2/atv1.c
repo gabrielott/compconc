@@ -10,10 +10,17 @@
 #include <string.h>
 #include <pthread.h>
 
-#define GET(m, i, j) m[i * dim + j]
-#define SET(m, i, j, num) m[i * dim + j] = num
+/* GET_TIME copiado de timer.h */
+#define GET_TIME(now) { \
+   struct timespec time; \
+   clock_gettime(CLOCK_MONOTONIC, &time); \
+   now = time.tv_sec + time.tv_nsec/1000000000.0; \
+}
 
-int dim;
+#define GET(m, i, j) m[i * dims + j]
+#define SET(m, i, j, num) m[i * dims + j] = num
+
+int dims;
 int *line_ids;
 double *in1;
 double *in2;
@@ -22,31 +29,20 @@ double *out;
 void
 die(char *msg)
 {
-	printf("%s", msg);
+	fprintf(stderr, "%s", msg);
 	exit(EXIT_FAILURE);
-}
-
-void
-print_matrix(double *matrix)
-{
-	for (int i = 0; i < dim; i++) {
-		for (int j = 0; j < dim; j++) {
-			printf("%f ", GET(matrix, i, j));
-		}
-		printf("\n");
-	}
 }
 
 void *
 threaded_multiply(void *args)
 {
-	int *id = (int *) args;
-	for (int i = 0; i < dim; i++) {
-		if (line_ids[i] != *id)
+	int id = *(int *) args;
+	for (int i = 0; i < dims; i++) {
+		if (line_ids[i] != id)
 			continue;
 
-		for (int j = 0; j < dim; j++) {
-			for (int k = 0; k < dim; k++) {
+		for (int j = 0; j < dims; j++) {
+			for (int k = 0; k < dims; k++) {
 				int value = GET(out, i, j) + GET(in1, i, k) * GET(in2, k, j);
 				SET(out, i, j, value);
 			}
@@ -59,69 +55,99 @@ threaded_multiply(void *args)
 int
 main(int argc, char **argv)
 {
+	double start, finish;
+	double init_time, mult_time, end_time;
+
+	/* Inicialização das estruturas */
+	GET_TIME(start);
+
 	if (argc != 3)
 		die("Uso: ./executável DIMENSÃO THREADS\n");
 
-	int thread_num;
-	pthread_t *thread_ids;
 	char *endptr;
-
-	dim = strtol(argv[1], &endptr, 10);
-	if (*argv[1] == '\0' || *endptr != '\0' || dim < 1)
+	dims = strtol(argv[1], &endptr, 10);
+	if (*argv[1] == '\0' || *endptr != '\0' || dims < 1)
 		die("Dimensão inválida.\n");
 
-	thread_num = strtol(argv[2], &endptr, 10);
+	int thread_num = strtol(argv[2], &endptr, 10);
 	if (*argv[2] == '\0' || *endptr != '\0' || thread_num < 1)
 		die("Número de threads inválido.\n");
 
-	if (thread_num > dim)
-		die("O número de threads precisa ser maior ou igual à dimensão da matriz.\n");
+	if (thread_num > dims)
+		die("O número de threads precisa ser menor ou igual à dimensão da matriz.\n");
 
-	if (!(line_ids = malloc(dim * sizeof(int))))
-		die("Sem memória para alocar vetor de IDs das linhas.\n");
-
+	pthread_t *thread_ids = NULL;
+	int malloc_err = 1;
+	if (!(line_ids = malloc(dims * sizeof(int))))
+		goto err;
 	if (!(thread_ids = malloc(thread_num * sizeof(pthread_t))))
-		die("Sem memória para alocar vetor de IDs dos threads.\n");
+		goto err;
+	if (!(in1 = malloc(dims * dims * sizeof(double))))
+		goto err;
+	if (!(in2 = malloc(dims * dims * sizeof(double))))
+		goto err;
+	if (!(out = malloc(dims * dims * sizeof(double))))
+		goto err;
+	malloc_err = 0;
 
-	if (!(in1 = malloc(dim * dim * sizeof(double))))
-		die("Sem memória para alocar matriz de entrada.\n");
-
-	if (!(in2 = malloc(dim * dim * sizeof(double))))
-		die("Sem memória para alocar matriz de entrada.\n");
-
-	if (!(out = malloc(dim * dim * sizeof(double))))
-		die("Sem memória para alocar matriz de saída.\n");
-
-	for (int i = 0; i < dim; i++) {
-		for (int j = 0; j < dim; j++) {
-			SET(in1, i, j, i + j);
-			SET(in2, i, j, i * j);
+	for (int i = 0; i < dims; i++) {
+		for (int j = 0; j < dims; j++) {
+			SET(in1, i, j, 1);
+			SET(in2, i, j, 1);
 		}
 	}
 
-	memset(out, 0, dim * dim * sizeof(double));
+	memset(out, 0, dims * dims * sizeof(double));
 
-	/* print_matrix(in1); */
-	/* printf("*\n"); */
-	/* print_matrix(in2); */
-	/* printf("=\n"); */
-
-	for (int i = 0; i < dim; i++)
+	for (int i = 0; i < dims; i++)
 		line_ids[i] = i % thread_num;
 
-	for (long i = 0; i < thread_num; i++)
-		pthread_create(thread_ids + i, NULL, threaded_multiply, line_ids + i);
+	GET_TIME(finish);
+	init_time = finish - start;
 
+	/* Threads e multiplicação */
+	GET_TIME(start);
+
+	for (int i = 0; i < thread_num; i++)
+		pthread_create(thread_ids + i, NULL, threaded_multiply, line_ids + i);
 	for (int i = 0; i < thread_num; i++)
 		pthread_join(thread_ids[i], NULL);
 
-	/* print_matrix(out); */
+	GET_TIME(finish);
+	mult_time = finish - start;
 
+	/* Finalização */
+	GET_TIME(start);
+
+	int correct = 1;
+	for (int i = 0; i < dims; i++) {
+		for (int j = 0; j < dims; j++) {
+			if (GET(out, i, j) != dims) {
+				correct = 0;
+				goto err;
+			}
+		}
+	}
+
+err:
 	free(line_ids);
 	free(thread_ids);
 	free(in1);
 	free(in2);
 	free(out);
+
+	if (malloc_err)
+		die("Erro ao alocar memória.\n");
+
+	printf("Resultado %s.\n", (correct) ? "correto" : "incorreto");
+
+	GET_TIME(finish);
+	end_time = finish - start;
+
+	printf("\nTempos:\n");
+	printf("Inicialização: %fs\n", init_time);
+	printf("Threads e multiplicação: %fs\n", mult_time);
+	printf("Finalização: %fs\n", end_time);
 
 	return EXIT_SUCCESS;
 }

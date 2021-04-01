@@ -1,0 +1,66 @@
+\documentclass[12pt]{article}
+
+\usepackage[portuguese]{babel}
+\usepackage{indentfirst}
+
+\author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838}
+\title{Laboratório 2 de Computação Concorrente}
+\date{01/04/2021}
+
+\begin{document}
+\maketitle
+\newpage
+
+\section{Tempos}
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+	\hline
+	Dimensão & Threads & Etapa & Tempo & Aceleração\\
+	\hline
+	500 & 1 & Inicialização & 0.0031s & -\\
+	500 & 1 & Multiplicação & 1.2228s & -\\
+	500 & 1 & Finalização   & 0.0009s & -\\
+	\hline
+	500 & 2 & Inicialização & 0.0034s & 0.9117\\
+	500 & 2 & Multiplicação & 0.6335s & 1.9302\\
+	500 & 2 & Finalização   & 0.0009s & 1.0000\\
+	\hline
+	500 & 4 & Inicialização & 0.0030s & 1.0333\\
+	500 & 4 & Multiplicação & 0.3314s & 3.6898\\
+	500 & 4 & Finalização   & 0.0009s & 1.0000\\
+	\hline\hline
+	1000 & 1 & Inicialização & 0.0093s & -\\
+	1000 & 1 & Multiplicação & 9.9118s & -\\
+	1000 & 1 & Finalização   & 0.0029s & -\\
+	\hline
+	1000 & 2 & Inicialização & 0.0097s & 0.9587\\
+	1000 & 2 & Multiplicação & 4.9488s & 2.0028\\
+	1000 & 2 & Finalização   & 0.0030s & 0.9666\\
+	\hline
+	1000 & 4 & Inicialização & 0.0121s & 0.7685\\
+	1000 & 4 & Multiplicação & 2.5374s & 3.9062\\
+	1000 & 4 & Finalização   & 0.0037s & 0.7837\\
+	\hline\hline
+	2000 & 1 & Inicialização & 0.0446s  & -\\
+	2000 & 1 & Multiplicação & 94.3886s & -\\
+	2000 & 1 & Finalização   & 0.1437s  & -\\
+	\hline
+	2000 & 2 & Inicialização & 0.0443s  & 1.0067\\
+	2000 & 2 & Multiplicação & 47.3680s & 1.9926\\
+	2000 & 2 & Finalização   & 0.1515s  & 0.9485\\
+	\hline
+	2000 & 4 & Inicialização & 0.0505s  & 0.8831\\
+	2000 & 4 & Multiplicação & 23.2206s & 4.0648\\
+	2000 & 4 & Finalização   & 0.1690s  & 0.8502\\
+	\hline
+\end{tabular}
+\end{center}
+
+\newpage
+\section{Conclusão}
+Os resultados obtidos são iguais aos resultados esperados.
+A inicialização e finalização não foram aceleradas com o aumento do número de threads,
+pois essas partes do programa rodam apenas na thread principal.
+A multiplicação em si, entretanto, exibe uma velocidade
+aproximadamente proporcional ao número de threads.
+\end{document}
