@@ -21,7 +21,7 @@
 #define SET(m, i, j, num) m[i * dims + j] = num
 
 int dims;
-int *line_ids;
+int thread_num;
 double *in1;
 double *in2;
 double *out;
@@ -36,11 +36,8 @@ die(char *msg)
 void *
 threaded_multiply(void *args)
 {
-	int id = *(int *) args;
-	for (int i = 0; i < dims; i++) {
-		if (line_ids[i] != id)
-			continue;
-
+	long id = (long) args;
+	for (int i = id; i < dims; i += thread_num) {
 		for (int j = 0; j < dims; j++) {
 			for (int k = 0; k < dims; k++) {
 				SET(out, i, j, GET(out, i, j) + GET(in1, i, k) * GET(in2, k, j));
@@ -68,7 +65,7 @@ main(int argc, char **argv)
 	if (*argv[1] == '\0' || *endptr != '\0' || dims < 1)
 		die("Dimensão inválida.\n");
 
-	int thread_num = strtol(argv[2], &endptr, 10);
+	thread_num = strtol(argv[2], &endptr, 10);
 	if (*argv[2] == '\0' || *endptr != '\0' || thread_num < 1)
 		die("Número de threads inválido.\n");
 
@@ -77,8 +74,6 @@ main(int argc, char **argv)
 
 	pthread_t *thread_ids = NULL;
 	int malloc_err = 1;
-	if (!(line_ids = malloc(dims * sizeof(int))))
-		goto err;
 	if (!(thread_ids = malloc(thread_num * sizeof(pthread_t))))
 		goto err;
 	if (!(in1 = malloc(dims * dims * sizeof(double))))
@@ -98,17 +93,14 @@ main(int argc, char **argv)
 
 	memset(out, 0, dims * dims * sizeof(double));
 
-	for (int i = 0; i < dims; i++)
-		line_ids[i] = i % thread_num;
-
 	GET_TIME(finish);
 	init_time = finish - start;
 
 	/* Threads e multiplicação */
 	GET_TIME(start);
 
-	for (int i = 0; i < thread_num; i++)
-		pthread_create(thread_ids + i, NULL, threaded_multiply, line_ids + i);
+	for (long i = 0; i < thread_num; i++)
+		pthread_create(thread_ids + i, NULL, threaded_multiply, (void *) i);
 	for (int i = 0; i < thread_num; i++)
 		pthread_join(thread_ids[i], NULL);
 
@@ -129,7 +121,6 @@ main(int argc, char **argv)
 	}
 
 err:
-	free(line_ids);
 	free(thread_ids);
 	free(in1);
 	free(in2);
