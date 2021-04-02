@@ -43,8 +43,7 @@ threaded_multiply(void *args)
 
 		for (int j = 0; j < dims; j++) {
 			for (int k = 0; k < dims; k++) {
-				int value = GET(out, i, j) + GET(in1, i, k) * GET(in2, k, j);
-				SET(out, i, j, value);
+				SET(out, i, j, GET(out, i, j) + GET(in1, i, k) * GET(in2, k, j));
 			}
 		}
 	}
