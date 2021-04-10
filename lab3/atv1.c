@@ -8,6 +8,14 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <time.h>
+
+/* GET_TIME copiado de timer.h */
+#define GET_TIME(now) { \
+   struct timespec time; \
+   clock_gettime(CLOCK_MONOTONIC, &time); \
+   now = time.tv_sec + time.tv_nsec/1000000000.0; \
+}
 
 int
 main(int argc, char **argv)
@@ -24,6 +32,9 @@ main(int argc, char **argv)
 		return EXIT_FAILURE;
 	}
 
+	double start, finish;
+	GET_TIME(start);
+
 	double sum = 0;
 	for (long long i = 0; i < n; i++) {
 		if (i % 2 == 0)
@@ -33,8 +44,11 @@ main(int argc, char **argv)
 	}
 	sum *= 4;
 
+	GET_TIME(finish);
+
 	printf("Calculado: %.15f\n", sum);
 	printf("     M_PI: %.15f\n", M_PI);
+	printf("    Tempo: %fs\n", finish - start);
 
 	return EXIT_SUCCESS;
 }

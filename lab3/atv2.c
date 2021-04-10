@@ -10,6 +10,13 @@
 #include <math.h>
 #include <pthread.h>
 
+/* GET_TIME copiado de timer.h */
+#define GET_TIME(now) { \
+   struct timespec time; \
+   clock_gettime(CLOCK_MONOTONIC, &time); \
+   now = time.tv_sec + time.tv_nsec/1000000000.0; \
+}
+
 long long steps;
 int threads;
 
@@ -63,6 +70,9 @@ main(int argc, char **argv)
 	if (threads > steps)
 		die("O número de threads precisa ser menor ou igual ao número de elementos.\n");
 
+	double start, finish;
+	GET_TIME(start);
+
 	pthread_t *thread_ids;
 	if (!(thread_ids = malloc(threads * sizeof(pthread_t))))
 		die("Erro ao tentar alocar memória.\n");
@@ -81,8 +91,11 @@ main(int argc, char **argv)
 	}
 	sum *= 4;
 
+	GET_TIME(finish);
+
 	printf("Calculado: %.15f\n", sum);
 	printf("     M_PI: %.15f\n", M_PI);
+	printf("    Tempo: %fs\n", finish - start);
 
 	free(thread_ids);
 

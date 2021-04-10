@@ -1,0 +1,68 @@
+\documentclass[12pt]{article}
+
+\usepackage[portuguese]{babel}
+\usepackage{indentfirst}
+\usepackage{xcolor}
+
+\author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838}
+\title{Laboratório 3 de Computação Concorrente}
+\date{09/04/2021}
+
+\begin{document}
+\maketitle
+\newpage
+
+\section{Tempos}
+\subsection{Para $n$ pequeno}
+Como esperado,
+a versão sequencial é mais rápida que a versão concorrente
+para valores de $n$ pequenos.
+Aumentar o número de threads aumenta ainda mais a diferença;
+o tempo necessário para criar as threads não vale a pena
+para valores pequenos de $n$.
+
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+	\hline
+	Versão & $n$ & $t$ & Tempo & Valor calculado para $\pi$\\
+	\hline
+	Sequencial  & $10^2$ & - & 0.000001s & \colorbox{orange}{3.1}31592903558554\\
+	Concorrente & $10^2$ & 1 & 0.000232s & \colorbox{orange}{3.1}31592903558554\\
+	Concorrente & $10^2$ & 2 & 0.000247s & \colorbox{orange}{3.1}31592903558553\\
+	Concorrente & $10^2$ & 4 & 0.000350s & \colorbox{orange}{3.1}31592903558554\\
+	\texttt{M\_PI} & - & - & - & \colorbox{orange}{3.1}41592653589793\\
+	\hline
+\end{tabular}
+\end{center}
+
+\subsection{Para $n$ grande}
+Para valores grandes de $n$,
+vemos que a versão concorrente consegue
+tirar proveito dos threads,
+com o tempo sendo cortado pela metade
+cada vez que o número de threads dobra.
+\begin{center}
+\begin{tabular}{|c|c|c|c|c|}
+	\hline
+	Versão & $n$ & $t$ & Tempo & Valor calculado para $\pi$\\
+	\hline
+	Sequencial  & $10^9$ & - & 3.572786s & \colorbox{orange}{3.14159265}2588050\\
+	Concorrente & $10^9$ & 1 & 3.564133s & \colorbox{orange}{3.14159265}2588050\\
+	Concorrente & $10^9$ & 2 & 1.808738s & \colorbox{orange}{3.14159265}2589258\\
+	Concorrente & $10^9$ & 4 & 0.918976s & \colorbox{orange}{3.14159265}2589210\\
+	\texttt{M\_PI} & - & - & - & \colorbox{orange}{3.14159265}3589793\\
+	\hline
+\end{tabular}
+\end{center}
+
+\section{Conclusão}
+As versões sequencial e concorrente
+calculam valores levemente diferentes.
+Além disso, a versão concorrente calcula valores distintos
+dependendo do número de threads.
+Essas diferenças podem ser explicadas por
+arredondamentos nos cálculos de ponto flutuante.
+Nenhuma das duas parece se aproximar de $\pi$
+mais rápido que a outra.
+
+\end{document}
