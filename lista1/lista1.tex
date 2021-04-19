@@ -1,0 +1,197 @@
+\documentclass[12pt]{article}
+
+\usepackage[brazilian]{babel}
+\usepackage[margin=1in]{geometry}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{minted}
+
+\setcounter{secnumdepth}{2}
+
+\titleformat{\section}{\normalfont\bfseries}{Questão \thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\Alph{subsection}}{1em}{}
+\titleformat{\subsubsection}{\normalfont\bfseries}{\thesubsubsection}{1em}{}
+\titlespacing{\section}{0pt}{15pt}{5pt}
+\titlespacing{\subsection}{0pt}{5pt}{5pt}
+
+\author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838}
+\title{Lista 1 de Computação Concorrente}
+\date{15/04/2021}
+
+\begin{document}
+\maketitle
+\newpage
+
+\section{}
+\subsection{}
+Um programa concorrente possui mais de um fluxo de execução.
+Isso significa que múltiplas tarefas podem
+ser executadas ao mesmo tempo.
+Por outro lado, um programa sequencial só é capaz de
+executar um fluxo ao mesmo tempo.
+
+\subsection{}
+Se uma das 5 tarefas leva tempo $t$ para ser executada,
+as 4 tarefas que serão executadas concorrentemente
+levarão o mesmo tempo $t$ para serem executadas.
+A 5\ra{} tarefa, que será executada depois das 4 primeiras,
+também levará tempo $t$, então $t\textsubscript{concorrente} = t + t = 2t$.
+Se as 5 tarefas fossem executadas sequenciamente,
+cada uma levaria tempo $t$, então $t\textsubscript{sequencial} = 5t$.
+\[
+	\text{Aceleração} =
+	\frac{t\textsubscript{sequencial}}{t\textsubscript{concorrente}} =
+	\frac{5t}{2t} = \frac{5}{2} = 2.5
+\]
+
+\subsection{}
+Seção crítica é uma parte do código onde
+há alguma operação que não deve ser executada
+por mais de uma thread simultaneamente.
+Por exemplo, a alteração de uma variável global
+por duas threads simultaneamente causa uma condição de corrida,
+então essa seria uma seção crítica.
+
+\subsection{}
+A sincronização por exclusão mútua tem como objetivo
+proteger uma seção crítica de código,
+garantindo que apenas uma thread execute uma parte do código ao mesmo tempo.
+Para acessar o trecho crítico, a thread precisa adquirir uma \textit{lock},
+que permite o acesso.
+Essa \textit{lock} só pode ser adquirida por uma thread ao mesmo tempo.
+Se uma thread já tiver a \textit{lock} e outra thread requisitá\-la,
+essa ficará bloqueada até que aquela libere a \textit{lock}.
+
+\section{}
+\begin{itemize}
+	\item O valor $-3$ \textit{não} é possível.
+
+	\item O valor $-1$ é possível.
+		\texttt{T2} executa as três primeiras linhas,
+		atribuindo $-2$ a \texttt{x} e passando pelo \texttt{if}.
+		Depois, \texttt{T1} executa sua primeira linha e
+		muda \texttt{x} para $-1$.
+		Por fim, \texttt{T2} imprime $-1$.
+
+	\item O valor 1 é possível.
+		\texttt{T1} executa as três primeiras linhas,
+		atribuindo $0$ a \texttt{x} e passando pelo \texttt{if}.
+		Depois, \texttt{T3} executa sua primeira linha e
+		muda \texttt{x} para $1$.
+		Por fim, \texttt{T1} imprime $1$.
+
+	\item O valor 3 é possível.
+		\texttt{T3} executa as três primeiras linhas,
+		atribuindo $2$ a \texttt{x} e passando pelo \texttt{if}.
+		Depois, \texttt{T1} executa sua primeira linha e
+		muda \texttt{x} para 3.
+		Por fim, \texttt{T3} imprime 3.
+\end{itemize}
+
+\section{}
+\subsection{}
+Sim, a exclusão mútua é garantida.
+O \textit{loop} garante que uma thread precisa esperar que
+\texttt{TURN} tenha o valor adequado antes de entrar na seção crítica.
+Desse modo, \texttt{T1} e \texttt{T0} executarão a seção crítica alternadamente,
+garantindo a exclusão mútua.
+
+\subsection{}
+A \textit{independência do restante do código} não é atendida.
+Se \texttt{T1} acabar sua execução,
+\texttt{T0} só poderá entrar na seção crítica uma única vez,
+ficando presa no \textit{loop} na próxima vez (ou vice\-versa).
+
+\section{}
+\begin{minipage}[t]{0.5\textwidth}
+\begin{minted}[tabsize=4]{c}
+int x = 0, y = 0;
+pthread_mutex_t x_mutex = PTHREAD_MUTEX_INITIALIZER;
+\end{minted}
+\end{minipage}
+
+\begin{center}
+\begin{minipage}[t]{0.45\textwidth}
+\begin{minted}[tabsize=4]{c}
+void *T1(void *id) {
+	int a = 0;
+	while (a < 2) {
+		pthread_mutex_lock(&x_mutex);
+		x++;
+		x--;
+		if (x == 0)
+			printf("x=%d\n", x);
+		pthread_mutex_unlock(&x_mutex);
+		a++;
+		printf("a=%d\n", a);
+	}
+}
+\end{minted}
+\end{minipage}
+\begin{minipage}[t]{0.45\textwidth}
+\begin{minted}[tabsize=4]{c}
+void *T2(void *id) {
+	int a = 2;
+	while (a > 0) {
+		pthread_mutex_lock(&x_mutex);
+		x++;
+		x--;
+		if (x == 0)
+			printf("x=%d\n", x);
+		pthread_mutex_unlock(&x_mutex);
+		a--;
+		fprintf(file, "a=%d\n", a);
+	}
+}
+\end{minted}
+\end{minipage}
+\end{center}
+
+\begin{center}
+\begin{minipage}[t]{0.45\textwidth}
+\begin{minted}[tabsize=4]{c}
+void *T3(void *id) {
+	pthread_mutex_lock(&x_mutex);
+	x--;
+	x++;
+	pthread_mutex_unlock(&x_mutex);
+	y++;
+}
+\end{minted}
+\end{minipage}
+\end{center}
+
+Foi criada a \textit{mutex} global \texttt{x\_mutex},
+que é usada para controlar o acesso à variável global \texttt{x}.
+O mesmo não foi necessário para \texttt{y},
+pois essa variável só é acessada dentro de uma thread, ou seja,
+não há condição de corrida para \texttt{y}.
+Analogamente, não foi necessário controlar o acesso a \texttt{file},
+pois apenas uma thread escreve no arquivo.
+
+\section{}
+\subsection{}
+Há três possibilidades:
+\begin{itemize}
+	\item \texttt{"Ola mundo!\char`\\nfoo nao existe\char`\\n"}:
+
+		\texttt{"Ola" } é escrito em \texttt{foo};\\
+		\texttt{foo} é renomeado para \texttt{bar};\\
+		\texttt{"mundo!\char`\\n"} é escrito em \texttt{bar};\\
+		\texttt{"foo nao existe\char`\\n"} é escrito em \texttt{bar}
+	\item \texttt{"Ola foo nao existe\char`\\n"}
+
+		\texttt{"Ola" } é escrito em \texttt{foo};\\
+		\texttt{"mundo!\char`\\n"} é escrito em \texttt{bar};\\
+		\texttt{foo} é renomeado para \texttt{bar} (antes de \texttt{fopen("foo", "r")});\\
+		\texttt{"foo nao existe\char`\\n"} é escrito em \texttt{bar}
+	\item \texttt{"Ola "}
+
+		\texttt{"Ola" } é escrito em \texttt{foo};\\
+		\texttt{"mundo!\char`\\n"} é escrito em \texttt{bar};\\
+		\texttt{foo} é renomeado para \texttt{bar} (depois de \texttt{fopen("foo", "r")})
+
+
+\end{itemize}
+
+\end{document}
