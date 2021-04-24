@@ -14,7 +14,8 @@
 \titlespacing{\section}{0pt}{15pt}{5pt}
 \titlespacing{\subsection}{0pt}{5pt}{5pt}
 
-\author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838}
+\author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838\\
+Rodrigo Delpreti de Siqueira - DRE 119022353}
 \title{Lista 1 de Computação Concorrente}
 \date{15/04/2021}
 
@@ -24,9 +25,8 @@
 
 \section{}
 \subsection{}
-Um programa concorrente possui mais de um fluxo de execução.
-Isso significa que múltiplas tarefas podem
-ser executadas ao mesmo tempo.
+Um programa concorrente possui mais de um fluxo de execução,
+com múltiplas tarefas sendo executadas ao mesmo tempo.
 Por outro lado, um programa sequencial só é capaz de
 executar um fluxo ao mesmo tempo.
 
@@ -163,12 +163,13 @@ void *T3(void *id) {
 
 Foi criada a \textit{mutex} global \texttt{x\_mutex},
 que é usada para controlar o acesso à variável global \texttt{x}.
-O mesmo não foi necessário para \texttt{y},
-pois essa variável só é acessada dentro de uma thread, ou seja,
-não há condição de corrida para \texttt{y}.
+O mesmo não foi necessário para \texttt{y} e \texttt{a},
+pois essa é local e aquela só é acessada dentro de uma thread, ou seja,
+não há condição de corrida.
 Analogamente, não foi necessário controlar o acesso a \texttt{file},
 pois apenas uma thread escreve no arquivo.
 
+\newpage
 \section{}
 \subsection{}
 Há três possibilidades:
