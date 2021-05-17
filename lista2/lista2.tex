@@ -1,0 +1,151 @@
+\documentclass[12pt]{article}
+
+\usepackage[brazilian]{babel}
+\usepackage{titlesec}
+\usepackage{minted}
+
+\titleformat{\section}{\normalfont\bfseries}{Questão \thesection}{1em}{}
+\titleformat{\subsection}{\normalfont\bfseries}{\Alph{subsection}}{1em}{}
+\titleformat{\subsubsection}{\normalfont\bfseries}{\thesubsubsection}{1em}{}
+\titlespacing{\section}{0pt}{15pt}{5pt}
+\titlespacing{\subsection}{0pt}{5pt}{5pt}
+
+\author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838\\
+Rodrigo Delpreti de Siqueira - DRE 119022353}
+\title{Lista 2 de Computação Concorrente}
+\date{15/05/2021}
+
+\begin{document}
+\maketitle
+\newpage
+
+\section{}
+\subsection{}
+A alternância entre as execuções das threads é garantida.
+Após o início do programa,
+as threads \texttt{Bar} são imediatamente pausadas
+pela função \texttt{pthre\-ad\_cond\_wait},
+enquanto que as de tipo \texttt{Foo} seguem livremente
+até que são pausadas depois de completar suas tarefas.
+Quando \texttt{M} threads \texttt{Foo} são pausadas,
+a função \texttt{pthread\_cond\_broadcast} é chamada e
+então as threads \texttt{Bar} são despausadas.
+Analogamente às threads \texttt{Bar},
+as threads \texttt{Foo} são pausadas
+depois que terminam suas tarefas,
+com a última liberando as threads \texttt{Bar},
+que estavam pausadas.
+Dessa forma,
+os dois tipos de thread são executados
+de maneira alternada.
+
+\subsection{}
+As variáveis \texttt{contaFoo} e \texttt{contaBar}
+não sofrem de condições de corrida,
+pois todo acesso a essas é controlado por uma mutex.
+Contanto que nenhuma das threads termine,
+a alternância continua ocorrendo,
+sem a presença do \textit{deadlock}.
+Caso contrário, entretanto,
+todas as threads restantes ficarão bloqueadas,
+pois \texttt{contaBar} ou \texttt{contaFoo}
+deixará de ser atualizado.
+
+\section{}
+\subsection{}
+
+\subsection{}
+
+\subsection{}
+
+\section{}
+\subsection{}
+Uma thread \texttt{A},
+com a mutex adquirida,
+incrementou \texttt{x} para 10 e
+verificou que 10 é um múltiplo de 10.
+Com isso,
+a thread \texttt{B},
+que estava pausada,
+foi despausada.
+Apesar disso,
+a função \texttt{pthread\_cond\_wait}
+só poderá de fato retornar
+depois que a mutex puder ser adquirida por \texttt{B}.
+Temos, então, uma condição de corrida,
+pois após a mutex ser liberada por \texttt{A},
+não necessariamente \texttt{B} será
+a próxima adquiri-la.
+
+Para printar 11,
+após a chamada a \texttt{pthread\_cond\_signal} e
+a liberação da mutex,
+alguma outra thread \texttt{A} adquiriu a mutex e
+incrementou \texttt{x} mais uma vez.
+Depois, a mutex foi liberada e
+só então \texttt{B} conseguiu a adquirir,
+retornando de \texttt{pthread\_cond\_wait}.
+Por conta da aquisição tardia,
+o valor de \texttt{x} já não era mais 10 e
+11 foi impresso.
+
+\subsection{}
+A causa da condição de corrida é
+a forma como o valor de \texttt{x}
+é passado de \texttt{A} para \texttt{B}.
+Sabendo disso,
+essa troca de informações
+poderia ser feita usando
+um modelo de produtores e consumidores.
+As threads \texttt{A} seriam as produtoras e
+a thread \texttt{B} seria a consumidora.
+Isso resolveria a condição de corrida,
+pois o valor de \texttt{x} seria copiado
+para um buffer,
+garantindo a exitência do valor
+até que \texttt{B} o acesse.
+
+Como não há nenhum loop na thread \texttt{B},
+apenas o primeiro múltiplo será impresso.
+Tirando vantagem desse comportamento,
+uma versão simplificada de produtores e consumidores
+foi implementada.
+A variável \texttt{print\_x} faz o papel do buffer,
+e \texttt{A} só escreve no buffer uma única vez.
+A mutex \texttt{print\_mutex} não era estritamente necessária,
+mas foi adicionada a fim de manter o modelo do código original.
+A função \texttt{pthread\_cond\_wait} exige uma mutex e
+não faria sentido usar a mutex da outra variável,
+que nem é utilizada em \texttt{B}.
+\begin{minted}[tabsize=4]{c}
+int x = 0;
+pthread_mutex_t x_mutex;
+pthread_cond_t x_cond;
+
+int print_x = 1;
+pthread_mutex_t print_mutex;
+
+void *A (void *tid) {
+	for (int i=0; i<100; i++) {
+		pthread_mutex_lock(&x_mutex);
+		pthread_mutex_lock(&print_mutex);
+		x++;
+		if(!(x%10) && print_x == 1) {
+			print_x = x;
+			pthread_cond_signal(&x_cond);
+		}
+		pthread_mutex_unlock(&print_mutex);
+		pthread_mutex_unlock(&x_mutex);
+	}
+}
+
+void *B (void *tid) {
+	pthread_mutex_lock(&print_mutex);
+	if(print_x%10)
+		pthread_cond_wait(&x_cond, &print_mutex);
+	printf("X=%d\n", print_x);
+	pthread_mutex_unlock(&print_mutex);
+}
+\end{minted}
+
+\end{document}
