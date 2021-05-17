@@ -3,6 +3,9 @@
 \usepackage[brazilian]{babel}
 \usepackage{titlesec}
 \usepackage{minted}
+\usepackage{graphicx}
+
+\graphicspath{ {./} }
 
 \titleformat{\section}{\normalfont\bfseries}{Questão \thesection}{1em}{}
 \titleformat{\subsection}{\normalfont\bfseries}{\Alph{subsection}}{1em}{}
@@ -13,7 +16,7 @@
 \author{Gabriel da Fonseca Ottoboni Pinho - DRE 119043838\\
 Rodrigo Delpreti de Siqueira - DRE 119022353}
 \title{Lista 2 de Computação Concorrente}
-\date{15/05/2021}
+\date{17/05/2021}
 
 \begin{document}
 \maketitle
@@ -52,11 +55,69 @@ pois \texttt{contaBar} ou \texttt{contaFoo}
 deixará de ser atualizado.
 
 \section{}
-\subsection{}
 
-\subsection{}
+O deadlock irá ocorrer assim que a thread
+iniciar sua operação de leitura ou escrita.
+Realizamos alguns testes na execução do código
+e podemos ver no trecho abaixo como a thread
+assume o monopólio do recurso para si.
 
-\subsection{}
+\begin{center}
+	\includegraphics{execucao}
+\end{center}
+
+A causa está no uso do método notify(),
+ao invés do método notifyAll().
+Abaixo segue o código
+com diversas correções, que corrige
+o problema do deadlock.
+
+\begin{minted}[tabsize=4]{java}
+	class Buffer {
+		static final int N = 10; //qtde de elementos no buffer
+		
+		private int[] buffer; //area de dados compartilhada
+		
+		//variaveis de estado
+		private int count; //qtde de posicoes ocupadas no buffer
+		private int in; //proxima posicao de insercao
+		private int out; //proxima posicao de retirada
+		
+		// Construtor
+		Buffer() {
+			this.count = 0;
+			this.in = 0;
+			this.out = 0;
+			this.buffer = new int[N];
+		}
+		
+		// Insere um item
+		public synchronized void insere (int item) {
+			while (count == N) {
+				try{ wait(); }
+				catch (InterruptedException e) { return; }
+			}
+			buffer[in % N] = item;
+			in++;
+			count++;
+			notifyAll();
+		}
+		
+		// Remove um item
+		public synchronized int remove () {
+			int aux;
+			while (count == 0) {
+				try{ wait(); }
+				catch (InterruptedException e) { return -1; }
+			}
+			aux = buffer[out % N];
+			out++;
+			count--;
+			notifyAll();
+			return aux;
+		}
+	}
+\end{minted}
 
 \section{}
 \subsection{}
@@ -147,5 +208,22 @@ void *B (void *tid) {
 	pthread_mutex_unlock(&print_mutex);
 }
 \end{minted}
+
+\section{}
+
+A solução irá atender aos requisitos do problema,
+apesar de não ser uma implementação adequada.
+Isso porque, ao término de uma escrita, podem haver
+múltiplas threads esperando para realizar a leitura, mas
+com o notify() da linha 19, apenas uma thread
+será acordada para utilizar o recurso. Este deveria ser
+substituído pelo método notifyAll().
+
+Já a chamada notifyAll() na linha 11 poderia ser
+substituída por um notify(), pois ela verifica
+se não há mais nenhum leitor aguardando pelo recurso.
+Assim, notify() irá sinalizar a liberação do recurso
+para um escritor, e apenas um é permitido mesmo.
+
 
 \end{document}
