@@ -55,16 +55,15 @@ pois \texttt{contaBar} ou \texttt{contaFoo}
 deixará de ser atualizado.
 
 \section{}
-
 O deadlock irá ocorrer assim que a thread
 iniciar sua operação de leitura ou escrita.
 Realizamos alguns testes na execução do código
 e podemos ver no trecho abaixo como a thread
 assume o monopólio do recurso para si.
 
-\begin{center}
-	\includegraphics{execucao}
-\end{center}
+% \begin{center}
+% 	\includegraphics{execucao}
+% \end{center}
 
 A causa está no uso do método notify(),
 ao invés do método notifyAll().
@@ -210,20 +209,58 @@ void *B (void *tid) {
 \end{minted}
 
 \section{}
+\subsection{}
+A solução atende aos requisitos do problema.
+Um escritor não pode escrever enquanto
+um leitor lê,
+pois ele será pausado na linha 16.
+De forma similar,
+quando uma thread está escrevendo,
+ela possui a \textit{lock},
+o que faz com que leitores fiquem
+bloqueados ao chamar \texttt{EntraLeitor}
+até que a escrita termine.
+A \textit{lock} também impede que
+dois escritores escrevam simultaneamente.
+Dessa forma,
+todos os requisitos são atendidos.
 
-A solução irá atender aos requisitos do problema,
-apesar de não ser uma implementação adequada.
-Isso porque, ao término de uma escrita, podem haver
-múltiplas threads esperando para realizar a leitura, mas
-com o notify() da linha 19, apenas uma thread
-será acordada para utilizar o recurso. Este deveria ser
-substituído pelo método notifyAll().
+\subsection{}
+A substituição poderia ser feita sem problemas.
+É possível que haja mais de um escritor
+pausado no \texttt{wait} da linha 16,
+mas, mesmo assim,
+é garantido que ele será acordado em algum momento;
+ou pelo \texttt{notify} da linha 19,
+ou pelo \texttt{notifyAll} da linha 11.
 
-Já a chamada notifyAll() na linha 11 poderia ser
-substituída por um notify(), pois ela verifica
-se não há mais nenhum leitor aguardando pelo recurso.
-Assim, notify() irá sinalizar a liberação do recurso
-para um escritor, e apenas um é permitido mesmo.
+É possível que o último leitor chame \texttt{SaiLeitor} e
+que uma possível chamada de \texttt{EntraLeitor} seja executada
+antes do leitor que estava esperando,
+fazendo com que ele seja pausado sem chamar
+o \texttt{notify} da linha 19.
+Mesmo nesse caso,
+é garantido que em algum momento
+o escritor vai conseguir a \textit{lock}
+logo depois de ser acordado,
+pois \texttt{SaiLeitor} precisará ser chamado.
 
+\subsection{}
+Com o \texttt{notifyAll} da linha 11,
+o \texttt{notify} da linha 19
+pode ser removido sem problemas.
+A lógica é similar à da letra B:
+Se após o \texttt{notifyAll} da linha 11
+todos os escritores executarem sem que
+um \texttt{EntraLeitor} seja executado entre eles,
+tudo dará certo.
+Se houver um \texttt{EntraLeitor} entre eles,
+alguns escritores podem acordar e
+depois dormir imediatamente de novo.
+Mesmo assim,
+como uma chamada a \texttt{SaiLeitor}
+ocorrerá em algum momento,
+é garantido que o escritor
+será acordado novamente.
 
 \end{document}
